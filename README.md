@@ -1,6 +1,6 @@
 # Scheds and Kernel Manager (scx-km)
 
-A comprehensive PyQt6 GUI application for managing Linux kernels and sched-ext BPF CPU schedulers on Arch Linux and derivatives.
+A comprehensive PyQt6 GUI application for managing Linux kernels and sched-ext BPF CPU schedulers on Arch Linux and derivatives. Created only for **XeroLinux**.
 
 ![License](https://img.shields.io/badge/license-GPL3-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
@@ -22,84 +22,6 @@ A comprehensive PyQt6 GUI application for managing Linux kernels and sched-ext B
 - **Multiple Modes**: Support for auto, gaming, lowlatency, and powersave modes
 - **Kernel Compatibility Check**: Automatic detection of sched-ext kernel support
 
-### 🎯 Supported Schedulers
-
-#### Gaming Optimized
-- `scx_rusty` - General-purpose gaming scheduler
-- `scx_lavd` - Latency-aware virtual deadline scheduler
-- `scx_bpfland` - BPF-based scheduler for gaming workloads
-
-#### Desktop Optimized
-- `scx_cosmos` - Balanced desktop performance
-- `scx_flash` - Fast interactive response
-
-#### Server Optimized
-- `scx_layered` - Multi-layer scheduling for servers
-- `scx_flatcg` - Flat cgroup scheduler
-- `scx_tickless` - Reduced timer interrupts
-
-#### Low Latency
-- `scx_nest` - Ultra-low latency scheduler
-
-#### Testing/Development
-- `scx_simple` - Simple reference implementation
-- `scx_chaos` - Randomized scheduling for testing
-- `scx_userland` - Userspace scheduling framework
-
-## Requirements
-
-### Dependencies
-- `python` (3.11+)
-- `python-pyqt6`
-- `pacman`
-- `scx-scheds` - sched-ext BPF scheduler collection
-- `scx-tools` - scxctl utility for scheduler management
-- `polkit` - For privilege escalation
-
-### Kernel Requirements
-- Linux kernel 6.12+ with sched-ext support
-- Recommended kernels:
-  - `linux-cachyos`
-  - `linux-xero`
-  - Any kernel compiled with `CONFIG_SCHED_CLASS_EXT=y`
-
-## Installation
-
-### From Source (Arch Linux)
-
-1. Clone or download the repository with these files:
-   - `PKGBUILD`
-   - `km_scx.py`
-   - `scx-km.desktop`
-
-2. Build and install:
-```bash
-makepkg -si
-```
-
-### Manual Installation
-
-```bash
-# Install dependencies
-sudo pacman -S python python-pyqt6 scx-scheds scx-tools polkit
-
-# Copy the script
-sudo install -Dm755 km_scx.py /usr/bin/scx-km
-
-# Copy desktop file
-sudo install -Dm644 scx-km.desktop /usr/share/applications/scx-km.desktop
-```
-
-## Usage
-
-### Launch the Application
-
-From terminal:
-```bash
-scx-km
-```
-
-Or launch from your application menu under **System** → **Scheds and Kernel Manager**
 
 ### Managing Kernels
 
@@ -121,6 +43,7 @@ Or launch from your application menu under **System** → **Scheds and Kernel Ma
 ### Scheduler Persistence
 
 When you enable persistence:
+
 - The application automatically creates a systemd service
 - The service is configured with your selected scheduler and mode
 - The scheduler will start automatically on boot
@@ -131,55 +54,6 @@ The systemd service is dynamically updated whenever you enable persistence with 
 ## Screenshots
 
 *Screenshots coming soon*
-
-## How It Works
-
-### Kernel Management
-- Uses `pacman` to search, install, and remove kernel packages
-- Automatically detects and filters kernel packages (excluding firmware, docs, tools)
-- Installs both kernel and headers packages together
-- Provides real-time installation output
-
-### Scheduler Management
-- Uses `scxctl` from scx-tools to manage schedulers
-- Monitors scheduler status every 2 seconds
-- Supports switching between schedulers without stopping
-- Creates/updates systemd service for boot persistence
-- Checks `/sys/kernel/sched_ext` for kernel support
-
-## Troubleshooting
-
-### "scxctl not found" Error
-Install scx-tools:
-```bash
-sudo pacman -S scx-tools
-```
-
-### Kernel doesn't support sched-ext
-Install a compatible kernel:
-```bash
-sudo pacman -S linux-cachyos
-```
-
-### Persistence not working
-Ensure systemd service is properly created:
-```bash
-systemctl status scx.service
-```
-
-### Permission Issues
-The application uses `pkexec` for privilege escalation. Ensure polkit is installed and configured.
-
-## Development
-
-### Project Structure
-```
-scx-km/
-├── PKGBUILD           # Arch Linux package build file
-├── km_scx.py          # Main Python application
-├── scx-km.desktop     # Desktop entry file
-└── README.md          # This file
-```
 
 ### Contributing
 Contributions are welcome! Please feel free to submit pull requests or open issues.
@@ -203,6 +77,7 @@ This project is licensed under the GPL-3.0 License - see the LICENSE file for de
 ## Changelog
 
 ### Version 1.0.0
+
 - Initial release
 - Kernel management functionality
 - Scheduler switching with live monitoring
