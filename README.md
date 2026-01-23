@@ -22,7 +22,6 @@ A comprehensive PyQt6 GUI application for managing Linux kernels and sched-ext B
 - **Multiple Modes**: Support for auto, gaming, lowlatency, and powersave modes
 - **Kernel Compatibility Check**: Automatic detection of sched-ext kernel support
 
-
 ### Managing Kernels
 
 1. Navigate to the **Kernel Manager** tab
@@ -53,7 +52,7 @@ The systemd service is dynamically updated whenever you enable persistence with 
 
 ## Screenshots
 
-*Screenshots coming soon*
+![SCX](https://github.com/user-attachments/assets/f8df76f7-b3cb-42c5-92c4-84471ca37671)
 
 ### Contributing
 Contributions are welcome! Please feel free to submit pull requests or open issues.
