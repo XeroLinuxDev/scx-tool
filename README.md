@@ -1,6 +1,6 @@
 # Scheds and Kernel Manager (scx-km)
 
-A comprehensive PyQt6 GUI application for managing Linux kernels and sched-ext BPF CPU schedulers for **XeroLinux**.
+A comprehensive GUI application for managing Linux kernels and sched-ext CPU schedulers for **XeroLinux**.
 
 ![License](https://img.shields.io/badge/license-GPL3-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
@@ -9,12 +9,14 @@ A comprehensive PyQt6 GUI application for managing Linux kernels and sched-ext B
 ## Features
 
 ### 🐧 Kernel Manager
+
 - **Install/Remove Kernels**: Easily manage multiple Linux kernels with automatic header installation
 - **Real-time Installation**: Live output during package operations
 - **Smart Detection**: Automatically scans for available and installed kernels from official and Chaotic-AUR repositories
 - **One-Click Operations**: Simple interface for kernel management
 
 ### ⚡ Scheduler Switcher
+
 - **Live Scheduler Switching**: Switch between sched-ext BPF CPU schedulers on the fly without rebooting
 - **Real-time Monitoring**: Continuous status updates showing active scheduler and mode
 - **Categorized Schedulers**: Organized by use case (Gaming, Desktop, Servers, Low Latency, Testing)
@@ -55,6 +57,7 @@ The systemd service is dynamically updated whenever you enable persistence with 
 ![SCX](https://github.com/user-attachments/assets/f8df76f7-b3cb-42c5-92c4-84471ca37671)
 
 ### Contributing
+
 Contributions are welcome! Please feel free to submit pull requests or open issues.
 
 ## Credits
@@ -72,6 +75,8 @@ This project is licensed under the GPL-3.0 License - see the LICENSE file for de
 - [scx-scheds](https://github.com/sched-ext/scx) - sched-ext BPF scheduler collection
 - [scx-tools](https://github.com/sched-ext/scx) - Tools for managing sched-ext schedulers
 - [XeroLinux](https://xerolinux.xyz) - Custom Arch Linux distribution
+
+P.S : This tool is also embedded in the **XeroLinux Toolkit**.
 
 ## Changelog
 
