@@ -1,6 +1,6 @@
 # Scheds and Kernel Manager (scx-km)
 
-A comprehensive PyQt6 GUI application for managing Linux kernels and sched-ext BPF CPU schedulers on Arch Linux and derivatives. Created only for **XeroLinux**.
+A comprehensive PyQt6 GUI application for managing Linux kernels and sched-ext BPF CPU schedulers for **XeroLinux**.
 
 ![License](https://img.shields.io/badge/license-GPL3-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
