@@ -376,16 +376,18 @@ class SchedulerTab(QWidget):
         self.kernel_supported = False
         self.setup_ui()
 
-        # Start monitoring
+        # Get and display status IMMEDIATELY (before any blocking operations)
         self.monitor = ScxctlMonitor()
-        self.monitor.status_updated.connect(self.update_status_display)
-
-        # Get initial status immediately (before monitor thread starts)
         initial_status = self.monitor.get_scheduler_status()
-        self.update_status_display(initial_status)
 
+        # Start monitor thread
+        self.monitor.status_updated.connect(self.update_status_display)
         self.monitor.start()
 
+        # Display the initial status NOW
+        self.update_status_display(initial_status)
+
+        # THEN scan schedulers (which might take time but status is already shown)
         self.scan_schedulers()
 
     @staticmethod
@@ -558,8 +560,8 @@ class SchedulerTab(QWidget):
         persistence_layout.addStretch()
         layout.addLayout(persistence_layout)
 
-        # Check initial persistence state
-        QTimer.singleShot(500, self.check_persistence_state)
+        # Check initial persistence state immediately
+        QTimer.singleShot(0, self.check_persistence_state)
 
         group.setLayout(layout)
         return group
@@ -764,21 +766,18 @@ class SchedulerTab(QWidget):
                 # Create/update service file with better timing and error handling
                 service_content = f"""[Unit]
 Description=sched-ext BPF CPU Scheduler ({scheduler})
-After=multi-user.target systemd-user-sessions.service graphical.target
-Wants=multi-user.target
+After=sysinit.target local-fs.target
+DefaultDependencies=no
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStartPre=/usr/bin/sleep 2
-ExecStart=/usr/bin/scxctl start --sched {scheduler_name} --mode {mode}
+ExecStart=/bin/sh -c '/usr/bin/scxctl stop 2>/dev/null || true; /usr/bin/scxctl start --sched {scheduler_name} --mode {mode}'
 ExecStop=/usr/bin/scxctl stop
 TimeoutStartSec=30
-Restart=on-failure
-RestartSec=10
 
 [Install]
-WantedBy=multi-user.target graphical.target
+WantedBy=sysinit.target
 """
 
                 # Write service file (requires root)
@@ -787,14 +786,14 @@ WantedBy=multi-user.target graphical.target
                     f.write(service_content)
 
                 # Copy to systemd, enable, and start the service
-                # Explicitly create symlinks in both targets to ensure it starts on boot
+                # Start early in boot process using sysinit.target
                 result = subprocess.run(
                     ['pkexec', 'sh', '-c',
                      f'cp {temp_file} /etc/systemd/system/scx.service && '
                      f'systemctl daemon-reload && '
                      f'systemctl enable --now scx.service && '
-                     f'ln -sf /etc/systemd/system/scx.service /etc/systemd/system/multi-user.target.wants/scx.service && '
-                     f'ln -sf /etc/systemd/system/scx.service /etc/systemd/system/graphical.target.wants/scx.service && '
+                     f'mkdir -p /etc/systemd/system/sysinit.target.wants && '
+                     f'ln -sf /etc/systemd/system/scx.service /etc/systemd/system/sysinit.target.wants/scx.service && '
                      f'systemctl is-enabled scx.service'],
                     capture_output=True,
                     text=True,
