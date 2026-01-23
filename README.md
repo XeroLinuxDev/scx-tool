@@ -12,7 +12,7 @@ A comprehensive GUI application for managing Linux kernels and sched-ext CPU sch
 
 - **Install/Remove Kernels**: Easily manage multiple Linux kernels with automatic header installation
 - **Real-time Installation**: Live output during package operations
-- **Smart Detection**: Automatically scans for available and installed kernels from official and Chaotic-AUR repositories
+- **Smart Detection**: Automatically scans for available kernels from official and Chaotic-AUR repos
 - **One-Click Operations**: Simple interface for kernel management
 
 ### ⚡ Scheduler Switcher
