@@ -1,0 +1,20 @@
+[Desktop Entry]
+Categories=System;Settings;Qt;
+Comment[en_US]=Manage Linux kernels and sched-ext BPF CPU schedulers
+Comment=Manage Linux kernels and sched-ext BPF CPU schedulers
+Exec=scx-km
+GenericName[en_US]=System Scheduler & Kernel Manager
+GenericName=System Scheduler & Kernel Manager
+Icon=cpu
+Keywords=kernel;scheduler;scx;sched-ext;bpf;performance;cpu;
+MimeType=
+Name[en_US]=Scheds and Kernel Manager
+Name=Scheds and Kernel Manager
+Path=
+StartupNotify=true
+Terminal=false
+TerminalOptions=
+Type=Application
+Version=1.0
+X-KDE-SubstituteUID=false
+X-KDE-Username=
