@@ -76,16 +76,4 @@ This project is licensed under the GPL-3.0 License - see the LICENSE file for de
 - [scx-tools](https://github.com/sched-ext/scx) - Tools for managing sched-ext schedulers
 - [XeroLinux](https://xerolinux.xyz) - Custom Arch Linux distribution
 
-P.S : This tool is also embedded in the **XeroLinux Toolkit**.
-
-## Changelog
-
-### Version 1.0.0
-
-- Initial release
-- Kernel management functionality
-- Scheduler switching with live monitoring
-- Scheduler persistence via systemd
-- Categorized scheduler selection
-- Multiple performance modes
-- Real-time status updates
+P.S : This tool is also embedded in the **XeroLinux Toolkit**. :D
