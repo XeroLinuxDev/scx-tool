@@ -71,10 +71,14 @@ class ScxctlMonitor(QThread):
 
     def run(self):
         """Monitor loop"""
+        # Check immediately on start (no delay)
+        status = self.get_scheduler_status()
+        self.status_updated.emit(status)
+
         while self.running:
+            self.msleep(500)  # Only 500ms between checks for very responsive updates
             status = self.get_scheduler_status()
             self.status_updated.emit(status)
-            self.msleep(2000)
 
     def get_scheduler_status(self):
         """Get current scheduler status using scxctl"""
@@ -375,6 +379,11 @@ class SchedulerTab(QWidget):
         # Start monitoring
         self.monitor = ScxctlMonitor()
         self.monitor.status_updated.connect(self.update_status_display)
+
+        # Get initial status immediately (before monitor thread starts)
+        initial_status = self.monitor.get_scheduler_status()
+        self.update_status_display(initial_status)
+
         self.monitor.start()
 
         self.scan_schedulers()
@@ -752,20 +761,24 @@ class SchedulerTab(QWidget):
 
                 self.log(f"→ Enabling persistence for {scheduler} ({mode})...")
 
-                # Create/update service file
+                # Create/update service file with better timing and error handling
                 service_content = f"""[Unit]
 Description=sched-ext BPF CPU Scheduler ({scheduler})
-After=multi-user.target
+After=multi-user.target systemd-user-sessions.service graphical.target
+Wants=multi-user.target
 
 [Service]
-Type=simple
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=/usr/bin/sleep 2
 ExecStart=/usr/bin/scxctl start --sched {scheduler_name} --mode {mode}
 ExecStop=/usr/bin/scxctl stop
+TimeoutStartSec=30
 Restart=on-failure
-RestartSec=5
+RestartSec=10
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=multi-user.target graphical.target
 """
 
                 # Write service file (requires root)
@@ -773,17 +786,31 @@ WantedBy=multi-user.target
                 with open(temp_file, 'w') as f:
                     f.write(service_content)
 
-                # Copy to systemd and enable
+                # Copy to systemd, enable, and start the service
+                # Explicitly create symlinks in both targets to ensure it starts on boot
                 result = subprocess.run(
                     ['pkexec', 'sh', '-c',
-                     f'cp {temp_file} /etc/systemd/system/scx.service && systemctl daemon-reload && systemctl enable scx.service'],
+                     f'cp {temp_file} /etc/systemd/system/scx.service && '
+                     f'systemctl daemon-reload && '
+                     f'systemctl enable --now scx.service && '
+                     f'ln -sf /etc/systemd/system/scx.service /etc/systemd/system/multi-user.target.wants/scx.service && '
+                     f'ln -sf /etc/systemd/system/scx.service /etc/systemd/system/graphical.target.wants/scx.service && '
+                     f'systemctl is-enabled scx.service'],
                     capture_output=True,
                     text=True,
-                    timeout=30
+                    timeout=45
                 )
 
                 if result.returncode == 0:
-                    self.log(f"✓ {scheduler} will auto-start on boot ({mode} mode)")
+                    # Check if the output confirms it's enabled
+                    if 'enabled' in result.stdout.lower():
+                        self.log(f"✓ {scheduler} enabled and will auto-start on boot ({mode} mode)")
+                        self.log(f"✓ Symlink verified: {result.stdout.strip()}")
+                    else:
+                        self.log(f"✓ {scheduler} service created ({mode} mode)")
+                    self.log("✓ Service started immediately for testing")
+                    # Verify the service started
+                    QTimer.singleShot(3000, self.verify_service_started)
                 else:
                     self.log(f"✗ Failed to enable persistence: {result.stderr}")
                     self.persist_checkbox.blockSignals(True)
@@ -791,7 +818,8 @@ WantedBy=multi-user.target
                     self.persist_checkbox.blockSignals(False)
             else:
                 self.log("→ Disabling scheduler persistence...")
-                cmd = ['pkexec', 'systemctl', 'disable', 'scx.service']
+                cmd = ['pkexec', 'sh', '-c',
+                       'systemctl stop scx.service && systemctl disable scx.service']
 
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
 
@@ -808,6 +836,21 @@ WantedBy=multi-user.target
             self.persist_checkbox.blockSignals(True)
             self.persist_checkbox.setChecked(not bool(state))
             self.persist_checkbox.blockSignals(False)
+
+    def verify_service_started(self):
+        """Verify that the service actually started"""
+        try:
+            result = subprocess.run(
+                ['systemctl', 'is-active', 'scx.service'],
+                capture_output=True,
+                text=True
+            )
+            if result.returncode == 0 and 'active' in result.stdout:
+                self.log("✓ Service verified as running")
+            else:
+                self.log("⚠ Service may not have started - check 'systemctl status scx.service'")
+        except:
+            pass
 
     def cleanup(self):
         """Cleanup on close"""

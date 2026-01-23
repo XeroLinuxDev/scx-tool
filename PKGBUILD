@@ -1,7 +1,7 @@
 # Maintainer: DarkXero <info@techxero.com>
 
 pkgname=scx-km
-pkgver=1.0.0
+pkgver=1.0.1
 pkgrel=1
 pkgdesc="Comprehensive GUI for managing Linux kernels and sched-ext BPF CPU schedulers"
 arch=('any')
