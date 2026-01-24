@@ -1,4 +1,4 @@
-# Scheds and Kernel Manager (scx-km)
+# Scheds and Kernel Manager (scx-tool)
 
 A comprehensive GUI application for managing sched-ext CPU schedulers for **XeroLinux**.
 
@@ -39,7 +39,7 @@ The systemd service is dynamically updated whenever you enable persistence with 
 
 ## Screenshots
 
-![SCX](https://github.com/user-attachments/assets/f8df76f7-b3cb-42c5-92c4-84471ca37671)
+<img width="838" height="757" alt="scx-tool" src="https://github.com/user-attachments/assets/bc17ee6e-daa2-44be-ab28-843c80c74785" />
 
 ### Contributing
 
