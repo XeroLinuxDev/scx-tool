@@ -253,7 +253,15 @@ class SchedulerTab(QWidget):
         mode_layout.addWidget(QLabel("Mode:"))
 
         self.mode_combo = QComboBox()
-        self.mode_combo.addItems(["auto", "gaming", "lowlatency", "powersave"])
+        # Add modes with humanized display names but keep technical names as data
+        modes = [
+            ("Auto", "auto"),
+            ("Gaming", "gaming"),
+            ("Low Latency", "lowlatency"),
+            ("Power Save", "powersave")
+        ]
+        for display_name, value in modes:
+            self.mode_combo.addItem(display_name, value)
         mode_layout.addWidget(self.mode_combo)
         mode_layout.addStretch()
         layout.addLayout(mode_layout)
@@ -355,7 +363,8 @@ class SchedulerTab(QWidget):
                 item.setEnabled(False)
 
                 for sched in available:
-                    self.scheduler_combo.addItem(f"  {sched}", sched)
+                    display_name = self.humanize_scheduler_name(sched)
+                    self.scheduler_combo.addItem(f"  {display_name}", sched)
                     added.add(sched)
 
         other = [s for s in self.available_schedulers if s not in added]
@@ -366,7 +375,8 @@ class SchedulerTab(QWidget):
             item.setEnabled(False)
 
             for sched in sorted(other):
-                self.scheduler_combo.addItem(f"  {sched}", sched)
+                display_name = self.humanize_scheduler_name(sched)
+                self.scheduler_combo.addItem(f"  {display_name}", sched)
 
         for i in range(self.scheduler_combo.count()):
             if self.scheduler_combo.itemData(i) is not None:
@@ -380,7 +390,7 @@ class SchedulerTab(QWidget):
             return
 
         scheduler = self.scheduler_combo.currentData()
-        mode = self.mode_combo.currentText()
+        mode = self.mode_combo.currentData()  # Use currentData instead of currentText
 
         scheduler_name = scheduler.replace('scx_', '')
 
@@ -465,7 +475,7 @@ class SchedulerTab(QWidget):
                     return
 
                 scheduler = self.scheduler_combo.currentData()
-                mode = self.mode_combo.currentText()
+                mode = self.mode_combo.currentData()  # Use currentData instead of currentText
                 scheduler_name = scheduler.replace('scx_', '')
 
                 self.log(f"→ Enabling persistence for {scheduler} ({mode})...")

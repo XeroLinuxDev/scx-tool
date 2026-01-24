@@ -2,7 +2,7 @@
 
 pkgname=scx-tool
 pkgver=1.0.3
-pkgrel=1
+pkgrel=2
 pkgdesc="Comprehensive GUI for managing sched-ext BPF CPU schedulers"
 arch=('any')
 url="https://github.com/XeroLinuxDev/scx-tool"
