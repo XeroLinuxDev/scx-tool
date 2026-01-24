@@ -1,19 +1,12 @@
 # Scheds and Kernel Manager (scx-km)
 
-A comprehensive GUI application for managing Linux kernels and sched-ext CPU schedulers for **XeroLinux**.
+A comprehensive GUI application for managing sched-ext CPU schedulers for **XeroLinux**.
 
 ![License](https://img.shields.io/badge/license-GPL3-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Arch%20Linux-blue.svg)
 
 ## Features
-
-### 🐧 Kernel Manager
-
-- **Install/Remove Kernels**: Easily manage multiple Linux kernels with automatic header installation
-- **Real-time Installation**: Live output during package operations
-- **Smart Detection**: Automatically scans for available kernels from official and Chaotic-AUR repos
-- **One-Click Operations**: Simple interface for kernel management
 
 ### ⚡ Scheduler Switcher
 
@@ -23,14 +16,6 @@ A comprehensive GUI application for managing Linux kernels and sched-ext CPU sch
 - **Persistence Support**: Enable schedulers to auto-start on boot via systemd service
 - **Multiple Modes**: Support for auto, gaming, lowlatency, and powersave modes
 - **Kernel Compatibility Check**: Automatic detection of sched-ext kernel support
-
-### Managing Kernels
-
-1. Navigate to the **Kernel Manager** tab
-2. View installed kernels in the left panel
-3. Browse available kernels in the right panel
-4. Select a kernel and click **Install** or **Remove**
-5. Monitor installation progress in the activity log
 
 ### Managing Schedulers
 
