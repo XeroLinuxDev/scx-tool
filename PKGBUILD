@@ -18,6 +18,7 @@ depends=(
 optdepends=(
     'linux-cachyos: CachyOS kernel with sched-ext support'
 )
+replaces=('scx-km')
 source=(
     "scx-tool.py"
     "scx-tool.desktop"
