@@ -1,11 +1,11 @@
-# Maintainer: DarkXero <info@techxero.com>
+# Maintainer: DarkXero <info@xerolinux.xyz>
 
-pkgname=scx-km
-pkgver=1.0.1
+pkgname=scx-tool
+pkgver=1.0.3
 pkgrel=1
-pkgdesc="Comprehensive GUI for managing Linux kernels and sched-ext BPF CPU schedulers"
+pkgdesc="Comprehensive GUI for managing sched-ext BPF CPU schedulers"
 arch=('any')
-url="https://github.com/XeroLinuxDev/scx-km"
+url="https://github.com/XeroLinuxDev/scx-tool"
 license=('GPL3')
 depends=(
     'python'
@@ -19,16 +19,16 @@ optdepends=(
     'linux-cachyos: CachyOS kernel with sched-ext support'
 )
 source=(
-    "km_scx.py"
-    "scx-km.desktop"
+    "scx-tool.py"
+    "scx-tool.desktop"
 )
 sha256sums=('SKIP'
             'SKIP')
 
 package() {
     # Install the main script (rename and make executable)
-    install -Dm755 "${srcdir}/km_scx.py" "${pkgdir}/usr/bin/scx-km"
-    
+    install -Dm755 "${srcdir}/scx-tool.py" "${pkgdir}/usr/bin/scx-tool"
+
     # Install desktop file
-    install -Dm644 "${srcdir}/scx-km.desktop" "${pkgdir}/usr/share/applications/scx-km.desktop"
+    install -Dm644 "${srcdir}/scx-tool.desktop" "${pkgdir}/usr/share/applications/scx-tool.desktop"
 }

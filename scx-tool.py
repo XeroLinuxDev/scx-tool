@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-XeroLinux Kernel Manager & Scheduler Switcher
-A comprehensive PyQt6 GUI for managing kernels and sched-ext schedulers
+XeroLinux Scheduler Switcher Tool
+A comprehensive PyQt6 GUI for managing sched-ext schedulers
 """
 
 import sys
@@ -12,53 +12,10 @@ import re
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QComboBox, QTextEdit, QGroupBox, QFrame,
-    QMessageBox, QLineEdit, QTabWidget, QListWidget, QListWidgetItem,
-    QSplitter, QCheckBox
+    QMessageBox, QLineEdit, QCheckBox
 )
 from PyQt6.QtCore import QThread, pyqtSignal, QTimer, Qt
 from PyQt6.QtGui import QFont, QIcon, QPalette
-
-
-class PackageInstallThread(QThread):
-    """Background thread for installing packages with real-time output"""
-    output_ready = pyqtSignal(str)
-    finished = pyqtSignal(bool, str)  # success, message
-
-    def __init__(self, packages, operation='install'):
-        super().__init__()
-        self.packages = packages
-        self.operation = operation  # 'install' or 'remove'
-
-    def run(self):
-        """Run the installation/removal"""
-        try:
-            if self.operation == 'install':
-                cmd = ['pkexec', 'pacman', '-S', '--noconfirm'] + self.packages
-            else:  # remove
-                cmd = ['pkexec', 'pacman', '-R', '--noconfirm'] + self.packages
-
-            process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1
-            )
-
-            # Stream output line by line
-            for line in iter(process.stdout.readline, ''):
-                if line:
-                    self.output_ready.emit(line.rstrip())
-
-            process.wait()
-
-            if process.returncode == 0:
-                self.finished.emit(True, f"Successfully {self.operation}ed packages")
-            else:
-                self.finished.emit(False, f"Failed to {self.operation} packages (exit code: {process.returncode})")
-
-        except Exception as e:
-            self.finished.emit(False, f"Error: {e}")
 
 
 class ScxctlMonitor(QThread):
@@ -125,247 +82,6 @@ class ScxctlMonitor(QThread):
         self.running = False
 
 
-class KernelManagerTab(QWidget):
-    """Kernel Manager Tab"""
-
-    def __init__(self, log_callback):
-        super().__init__()
-        self.log = log_callback
-        self.available_kernels = []
-        self.installed_kernels = []
-        self.setup_ui()
-        self.scan_kernels()
-
-    def setup_ui(self):
-        """Setup kernel manager UI"""
-        layout = QVBoxLayout(self)
-
-        # Header with icon and description
-        header_layout = QHBoxLayout()
-
-        # Icon (using emoji)
-        icon_label = QLabel("🐧")
-        icon_label.setFont(QFont("Sans", 48))
-        header_layout.addWidget(icon_label)
-
-        # Title and description
-        text_layout = QVBoxLayout()
-        title = QLabel("Kernel Manager")
-        title.setFont(QFont("Sans", 16, QFont.Weight.Bold))
-        text_layout.addWidget(title)
-
-        desc = QLabel("Install and manage Linux kernels with headers")
-        text_layout.addWidget(desc)
-
-        header_layout.addLayout(text_layout)
-        header_layout.addStretch()
-        layout.addLayout(header_layout)
-
-        # Kernel lists
-        lists_layout = QHBoxLayout()
-
-        # Installed kernels
-        installed_group = QGroupBox("📦 Installed Kernels")
-        installed_layout = QVBoxLayout()
-        self.installed_list = QListWidget()
-        installed_layout.addWidget(self.installed_list)
-
-        remove_btn = QPushButton("🗑️ Remove Selected")
-        remove_btn.clicked.connect(self.remove_kernel)
-        installed_layout.addWidget(remove_btn)
-
-        installed_group.setLayout(installed_layout)
-        lists_layout.addWidget(installed_group)
-
-        # Available kernels
-        available_group = QGroupBox("🌐 Available Kernels")
-        available_layout = QVBoxLayout()
-        self.available_list = QListWidget()
-        available_layout.addWidget(self.available_list)
-
-        install_btn = QPushButton("⬇️ Install Selected")
-        install_btn.clicked.connect(self.install_kernel)
-        available_layout.addWidget(install_btn)
-
-        available_group.setLayout(available_layout)
-        lists_layout.addWidget(available_group)
-
-        layout.addLayout(lists_layout)
-
-        # Refresh button
-        refresh_layout = QHBoxLayout()
-        refresh_layout.addStretch()
-        refresh_btn = QPushButton("🔄 Refresh Kernel Lists")
-        refresh_btn.clicked.connect(self.scan_kernels)
-        refresh_layout.addWidget(refresh_btn)
-        refresh_layout.addStretch()
-        layout.addLayout(refresh_layout)
-
-    def scan_kernels(self):
-        """Scan for available and installed kernels"""
-        self.log("Scanning for kernels...")
-
-        try:
-            # Get all available linux kernel packages
-            result = subprocess.run(
-                ['pacman', '-Ss', '^linux'],
-                capture_output=True,
-                text=True
-            )
-
-            # Parse output
-            self.available_kernels = []
-            for line in result.stdout.split('\n'):
-                # Match lines like: extra/linux 6.6.1-1
-                if line.strip() and not line.startswith(' '):
-                    parts = line.split()
-                    if len(parts) >= 2:
-                        pkg_name = parts[0].split('/')[-1]
-                        # Filter: must start with 'linux' and be a kernel (not firmware, docs, headers, etc)
-                        if pkg_name.startswith('linux') and not any(x in pkg_name for x in [
-                            'firmware', 'docs', 'api-headers', 'tools', 'meta', '-headers', 'linux-atm'
-                        ]):
-                            # Only add actual kernel packages (not headers)
-                            if pkg_name == 'linux' or '-' in pkg_name:
-                                self.available_kernels.append(pkg_name)
-
-            # Get installed kernels (also filter out headers)
-            result = subprocess.run(
-                ['pacman', '-Q'],
-                capture_output=True,
-                text=True
-            )
-
-            self.installed_kernels = []
-            for line in result.stdout.split('\n'):
-                if line.strip():
-                    pkg_name = line.split()[0]
-                    if pkg_name.startswith('linux') and not any(x in pkg_name for x in [
-                        'firmware', 'docs', 'api-headers', 'tools', 'meta', '-headers', 'linux-atm'
-                    ]):
-                        if pkg_name == 'linux' or '-' in pkg_name:
-                            self.installed_kernels.append(pkg_name)
-
-            self.update_lists()
-            self.log(f"✓ Found {len(self.available_kernels)} available kernels, {len(self.installed_kernels)} installed")
-
-        except Exception as e:
-            self.log(f"✗ Error scanning kernels: {e}")
-
-    def update_lists(self):
-        """Update the kernel lists"""
-        self.installed_list.clear()
-        self.available_list.clear()
-
-        for kernel in sorted(self.installed_kernels):
-            self.installed_list.addItem(kernel)
-
-        for kernel in sorted(self.available_kernels):
-            if kernel not in self.installed_kernels:
-                self.available_list.addItem(kernel)
-
-    def install_kernel(self):
-        """Install selected kernel with headers"""
-        selected = self.available_list.currentItem()
-        if not selected:
-            QMessageBox.warning(self, "No Selection", "Please select a kernel to install")
-            return
-
-        kernel = selected.text()
-        headers = f"{kernel}-headers"
-
-        reply = QMessageBox.question(
-            self,
-            "Confirm Installation",
-            f"Install {kernel} with {headers}?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-
-        if reply == QMessageBox.StandardButton.Yes:
-            self.log(f"→ Installing {kernel} and {headers}...")
-
-            # Disable buttons during installation
-            self.available_list.setEnabled(False)
-            self.installed_list.setEnabled(False)
-
-            # Create and start installation thread
-            self.install_thread = PackageInstallThread([kernel, headers], 'install')
-            self.install_thread.output_ready.connect(self.log)
-            self.install_thread.finished.connect(self.on_install_finished)
-            self.install_thread.start()
-
-    def on_install_finished(self, success, message):
-        """Handle installation completion"""
-        self.log(message)
-
-        # Re-enable UI
-        self.available_list.setEnabled(True)
-        self.installed_list.setEnabled(True)
-
-        if success:
-            self.log("✓ Installation completed successfully")
-            self.scan_kernels()
-        else:
-            QMessageBox.critical(self, "Installation Failed", message)
-
-    def remove_kernel(self):
-        """Remove selected kernel"""
-        selected = self.installed_list.currentItem()
-        if not selected:
-            QMessageBox.warning(self, "No Selection", "Please select a kernel to remove")
-            return
-
-        kernel = selected.text()
-        headers = f"{kernel}-headers"
-
-        # Check if this is the running kernel
-        try:
-            running = subprocess.run(['uname', '-r'], capture_output=True, text=True).stdout.strip()
-            if kernel in running:
-                QMessageBox.critical(
-                    self,
-                    "Cannot Remove",
-                    f"{kernel} is currently running!\n\nPlease reboot into another kernel first."
-                )
-                return
-        except:
-            pass
-
-        reply = QMessageBox.question(
-            self,
-            "Confirm Removal",
-            f"Remove {kernel} and {headers}?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-
-        if reply == QMessageBox.StandardButton.Yes:
-            self.log(f"→ Removing {kernel} and {headers}...")
-
-            # Disable buttons during removal
-            self.available_list.setEnabled(False)
-            self.installed_list.setEnabled(False)
-
-            # Create and start removal thread
-            self.remove_thread = PackageInstallThread([kernel, headers], 'remove')
-            self.remove_thread.output_ready.connect(self.log)
-            self.remove_thread.finished.connect(self.on_remove_finished)
-            self.remove_thread.start()
-
-    def on_remove_finished(self, success, message):
-        """Handle removal completion"""
-        self.log(message)
-
-        # Re-enable UI
-        self.available_list.setEnabled(True)
-        self.installed_list.setEnabled(True)
-
-        if success:
-            self.log("✓ Removal completed successfully")
-            self.scan_kernels()
-        else:
-            QMessageBox.critical(self, "Removal Failed", message)
-
-
 class SchedulerTab(QWidget):
     """Scheduler Switcher Tab"""
 
@@ -428,33 +144,24 @@ class SchedulerTab(QWidget):
     def setup_ui(self):
         """Setup scheduler UI"""
         layout = QVBoxLayout(self)
-
-        # Header with icon and description
-        header_layout = QHBoxLayout()
-
-        # Icon
-        icon_label = QLabel("⚡")
-        icon_label.setFont(QFont("Sans", 48))
-        header_layout.addWidget(icon_label)
-
-        # Title and description
-        text_layout = QVBoxLayout()
-        title = QLabel("Scheduler Switcher")
-        title.setFont(QFont("Sans", 16, QFont.Weight.Bold))
-        text_layout.addWidget(title)
-
-        desc = QLabel("Manage sched-ext BPF CPU schedulers on the fly")
-        text_layout.addWidget(desc)
-
-        header_layout.addLayout(text_layout)
-        header_layout.addStretch()
-        layout.addLayout(header_layout)
+        layout.setContentsMargins(5, 0, 5, 5)  # Remove top margin
+        layout.setSpacing(5)  # Compact spacing
 
         # Kernel support check
         layout.addWidget(self.create_kernel_check_panel())
 
+        # Separator line - text based for visibility
+        separator1 = QLabel("─" * 60)  # Shorter for narrow window
+        separator1.setStyleSheet("QLabel { color: #666666; }")
+        layout.addWidget(separator1)
+
         # Current status
         layout.addWidget(self.create_status_panel())
+
+        # Separator line - text based for visibility
+        separator2 = QLabel("─" * 60)  # Shorter for narrow window
+        separator2.setStyleSheet("QLabel { color: #666666; }")
+        layout.addWidget(separator2)
 
         # Scheduler selection
         layout.addWidget(self.create_selection_panel())
@@ -862,8 +569,8 @@ class XeroLinuxManager(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("XeroLinux Kernel Manager & Scheduler Switcher")
-        self.setMinimumSize(1000, 800)
+        self.setWindowTitle("XeroLinux Scheduler Switcher Tool")
+        self.setMinimumSize(550, 600)  # Compact width for scheduler tool
 
         self.setup_ui()
 
@@ -872,51 +579,62 @@ class XeroLinuxManager(QMainWindow):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
+        layout.setContentsMargins(10, 10, 10, 10)  # Compact margins
+        layout.setSpacing(5)  # Compact spacing
 
         # Main title
         title_layout = QHBoxLayout()
-        logo = QLabel("🐧")
-        logo.setFont(QFont("Sans", 32))
+        logo = QLabel("⚡")
+        logo.setFont(QFont("Sans", 28))  # Slightly smaller icon
         title_layout.addWidget(logo)
 
-        title = QLabel("XeroLinux Kernel Manager & Scheduler Switcher")
-        title.setFont(QFont("Sans", 18, QFont.Weight.Bold))
+        title = QLabel("XeroLinux Scheduler Switcher Tool")
+        title.setFont(QFont("Sans", 16, QFont.Weight.Bold))  # Slightly smaller title
         title_layout.addWidget(title)
         title_layout.addStretch()
         layout.addLayout(title_layout)
 
-        # Create log widget FIRST (before tabs that need it)
+        # Description under title
+        desc = QLabel("Manage sched-ext BPF CPU schedulers on the fly")
+        desc.setFont(QFont("Sans", 11))
+        desc.setContentsMargins(45, 0, 0, 5)  # Adjust left margin to align with title
+        layout.addWidget(desc)
+
+        # Separator line - text based for visibility
+        separator = QLabel("─" * 60)  # Shorter for narrow window
+        separator.setStyleSheet("QLabel { color: #666666; }")
+        separator.setContentsMargins(0, 5, 0, 0)  # Remove bottom margin
+        layout.addWidget(separator)
+
+        # Create log widget FIRST (before scheduler that needs it)
         log_group = QGroupBox("📋 Activity Log")
         log_layout = QVBoxLayout()
+        log_layout.setContentsMargins(5, 5, 5, 5)  # Compact margins
         self.log_output = QTextEdit()
         self.log_output.setReadOnly(True)
-        self.log_output.setMaximumHeight(150)
+        self.log_output.setMinimumHeight(150)  # Compact log area
         log_layout.addWidget(self.log_output)
         log_group.setLayout(log_layout)
 
-        # Tab widget (created after log_output exists)
-        self.tabs = QTabWidget()
-
-        # Kernel manager tab
-        self.kernel_tab = KernelManagerTab(self.log)
-        self.tabs.addTab(self.kernel_tab, "🐧 Kernel Manager")
-
-        # Scheduler tab (only if scxctl is available)
+        # Scheduler content (only if scxctl is available)
         if self.check_scxctl():
             self.scheduler_tab = SchedulerTab(self.log)
-            self.tabs.addTab(self.scheduler_tab, "⚡ Scheduler Switcher")
+            layout.addWidget(self.scheduler_tab)
         else:
-            dummy = QWidget()
-            dummy_layout = QVBoxLayout(dummy)
-            dummy_layout.addWidget(QLabel("⚠️ scxctl not found. Install scx-tools to enable this feature."))
-            self.tabs.addTab(dummy, "⚡ Scheduler Switcher")
-
-        layout.addWidget(self.tabs)
+            warning_widget = QWidget()
+            warning_layout = QVBoxLayout(warning_widget)
+            warning_layout.addStretch()
+            warning_label = QLabel("⚠️ scxctl not found. Install scx-tools to enable this feature.")
+            warning_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            warning_label.setFont(QFont("Sans", 14))
+            warning_layout.addWidget(warning_label)
+            warning_layout.addStretch()
+            layout.addWidget(warning_widget)
 
         # Add log panel at the bottom
         layout.addWidget(log_group)
 
-        self.log("XeroLinux Manager initialized")
+        self.log("XeroLinux Scheduler Switcher Tool initialized")
 
     def check_scxctl(self):
         """Check if scxctl is available"""
