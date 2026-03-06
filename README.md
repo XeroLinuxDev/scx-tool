@@ -39,7 +39,7 @@ The systemd service is dynamically updated whenever you enable persistence with 
 
 ## Screenshots
 
-<img width="838" height="757" alt="scx-tool" src="https://github.com/user-attachments/assets/bc17ee6e-daa2-44be-ab28-843c80c74785" />
+<img width="838" height="757" alt="scx-tool" src="image.webp" />
 
 ### Contributing
 
